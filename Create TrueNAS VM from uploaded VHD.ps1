@@ -44,6 +44,7 @@ $imageConfig = New-AzImageConfig `
 $imageConfig = Set-AzImageOsDisk `
    -Image $imageConfig `
    -OsType Linux `
+   -OsState Generalized `
    -ManagedDiskId $disk.Id
 
 $image = New-AzImage `
@@ -59,7 +60,7 @@ New-AzVm `
    -Size $vmSize `
    -VirtualNetworkName $vmVnet `
    -SubnetName $vmSubnet `
-   -SecurityGroupName "$($Name)-nsg" `
+   -SecurityGroupName "$($vmName)-nsg" `
    -PublicIpAddressName "$($vmName)-1-pip" `
    -Credential $Credential `
    -OpenPorts $OpenPorts
