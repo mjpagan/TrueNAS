@@ -19,15 +19,15 @@
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
 #
 # Setting the table
-$rgName = "RG"
-$uploadedVHD = "TrueNAS_12.0_RC1"
+$rgName = "Lab_RG"
+$uploadedVHD = "TrueNAS_SCALE_20_10"
 
 # Image Settings
-$imageName = 'TrueNAS_Core_12.0_RC1'
+$imageName = 'TrueNAS_SCALE_20_10'
 $disk = Get-AzDisk -ResourceGroupName $rgName -DiskName $uploadedVHD
 
 # VM Settings
-$vmName = "TrueNAS01"
+$vmName = "TrueNAS06"
 $vmSize = "Standard_B2ms"
 $vmVnet = "lab-ncus-vnet"
 $vmSubnet = "lab-ncus-snet-1"
