@@ -19,48 +19,31 @@
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
 #
 # Setting the table
-$rgName = "Lab_RG"
-$uploadedVHD = "TrueNAS_SCALE_20_10"
 
-# Image Settings
-$imageName = 'TrueNAS_SCALE_20_10'
-$disk = Get-AzDisk -ResourceGroupName $rgName -DiskName $uploadedVHD
+$vmName = "TN-Test05"
+$vmConfig = New-AzVMConfig -VMName $vmName -VMSize "Standard_B2ms"
 
-# VM Settings
-$vmName = "TrueNAS06"
-$vmSize = "Standard_B2ms"
-$vmVnet = "lab-ncus-vnet"
-$vmSubnet = "lab-ncus-snet-1"
-$vmLocation = "North Central US"
-$AdminUserName = 'truenasadmin'
-$AdminPassword = ConvertTo-SecureString 'XLLBaNH7LJt2eUNr' -AsPlainText -Force
-$Credential = New-Object System.Management.Automation.PSCredential ($AdminUserName, $AdminPassword)
-$openPorts = 443
+$rgname = "Lab_RG"
+$vnetName = "lab-ncus-vnet"
+$location = "northcentralus"
 
-# Make things
-$imageConfig = New-AzImageConfig `
-   -Location $vmlocation
+$osDiskName = "TrueNAS05"
 
-$imageConfig = Set-AzImageOsDisk `
-   -Image $imageConfig `
-   -OsType Linux `
-   -OsState Generalized `
-   -ManagedDiskId $disk.Id
+$vnet = Get-azvirtualnetwork -Name $vnetName
 
-$image = New-AzImage `
-   -ImageName $imageName `
-   -ResourceGroupName $rgName `
-   -Image $imageConfig
 
-New-AzVm `
-   -ResourceGroupName $rgName `
-   -Name $vmName `
-   -Image $image.Id `
-   -Location $vmlocation `
-   -Size $vmSize `
-   -VirtualNetworkName $vmVnet `
-   -SubnetName $vmSubnet `
-   -SecurityGroupName "$($vmName)-nsg" `
-   -PublicIpAddressName "$($vmName)-1-pip" `
-   -Credential $Credential `
-   -OpenPorts $OpenPorts
+$nicName = $vmName+"-nic"
+$nic = New-AzNetworkInterface -Name $nicName `
+    -ResourceGroupName $rgname `
+    -Location $location -SubnetId $vnet.Subnets[0].Id `
+
+## fix the subnet thing
+
+$osDisk = Get-AzDisk -Name $osDiskName
+
+$vm = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
+
+$vm = Set-AzVMOSDisk -VM $vm -ManagedDiskId $osDisk.Id -StorageAccountType Standard_LRS `
+    -DiskSizeInGB 32 -CreateOption Attach -Linux
+
+New-AzVM -ResourceGroupName $rgname -Location $location -VM $vm
