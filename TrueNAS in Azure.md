@@ -1,22 +1,26 @@
-### Intro
+### Introduction
 
-Recently I've had the opportunity to play around with some IX Systems NAS appliances and their platform, TrueNAS, piqued my interest. While I scanning some of their deployment documentation, I noticed that there were instructions for a deployment on AWS but none for Azure. I checked with support and they said there wasn't a technical limitation, they just haven't worked on getting it certified yet. That  made me think about how would I go about making this work on Azure.
+Recently I've had the opportunity to play around with some IX Systems NAS appliances and their platform, TrueNAS, piqued my interest. While I scanning some of their deployment documentation, I noticed that there were instructions for deployment on AWS but none for Azure. I checked with support and they said there wasn't a technical limitation, they just haven't worked on getting it certified yet. That made me think about how would I go about making this work on Azure.
+
+### Goal
+
+I took it upon myself to see if I could make a TrueNAS appliance in Azure. I've never created a custom image for Azure or really spent much time using Hyper-V so it was time to roll up my sleeves and learn some new things. This post details my process and the result. I hope you find my journey and the result useful.
 
 ### Journey 
 
-Initially, I did some research on converting an existing VMware OVA image and getting that to work in Azure. After a few attempts it became pretty apparent that this was more complicated than it needed to be.
+Initially, I did some research on converting an existing VMware OVA image and getting that to work in Azure. After a few attempts, it became pretty apparent that this was more complicated than it needed to be.
 
-Next, I used Veeam to backup then restore a TrueNAS virtual machine from a VMware environment into Azure. This worked and I was able to connect to the OS and configure pools, etc. I didn't want everyone wanted to run TrueNAS in Azure to go through the backup/restore process I needed something that was more portable.
+Next, I used Veeam to backup then restore a TrueNAS virtual machine from a VMware environment into Azure. This worked and I was able to connect to the OS and configure pools, etc. I didn't want everyone who wanted to run TrueNAS in Azure to go through the backup/restore process I needed something that was more portable.
 
-I tried creating a TrueNAS Hyper-V image to simplify the conversion and was able to convert the Hyper-V virtual disk into a disk image that can be used in Azure. I uploaded the disk and then built a virtual machine around it. After that I turned it into an VMware image to deploy.
+I tried creating a TrueNAS Hyper-V image to simplify the conversion and was able to convert the Hyper-V virtual disk into a disk image that can be used in Azure. I uploaded the disk and then built a virtual machine around it. After that, I turned it into a VMware image to deploy.
 
 This presented some deployment issues based on the script I'd cobbled together. The script would run, create the VM and then wait another 25 minutes before throwing an error message, that ended up not affecting the VM. I worked on that for a while but couldn't find a solution so I simplified my process a bit.
 
 This time around I took the virtual disk created from the Hyper-V virtual machine and instead of worrying about creating an image I just cloned the disk this allowed me to just create the VM with a PowerShell script into my already existing tenant. I can now reproduce creating a basic TrueNAS virtual machine in Azure rather easily with my base disk.
 
-I originally created my Hyper-V image with the TrueNAS 12.X Core software which is built on FreeBSD. There were a couple of issues I ran into with FreeBSD (mostly my own limitations working in UNIX) so I switched the image to TrueNAS SCALE software which is based on Debian Linux. 
+I originally created my Hyper-V image with the TrueNAS 12.X Core software which is built on FreeBSD. There were a couple of issues I ran into with FreeBSD (mostly my own limitations working in UNIX) so I switched the image to TrueNAS SCALE software which is based on Debian Linux.
 
-Even though this code is currently an "alpha" I was able install the Azure Linux Agent in the first release (20.10-ALPHA). The builds are progressing quickly and now the waagent is included in the 20.12-ALPHA code.
+Even though this code is currently an "alpha" I was able to install the [Azure Linux Agent](https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/agent-linux) in the first release (20.10-ALPHA). The builds are progressing quickly and now the waagent is included in the 20.12-ALPHA code.
 
 ### Challenges
 
@@ -61,7 +65,7 @@ I also wanted to keep the OS disk small in Azure because the bigger it is the mo
    $$
    33285996544~bytes / 1048576~bytes = 31,744~bytes = 31~GiB
    $$
-   If the result was not a whole number we'd need to resize the VHD. IN this case it is a whole number so it is a valid VHD. Now we can use PowerShell or Azure Storage Explorer to upload the VHD to your Resource Group of choice as a managed disk.
+   If the result was not a whole number we'd need to resize the VHD. In this case, it is a whole number so it is a valid VHD. Now we can use PowerShell or Azure Storage Explorer to upload the VHD to your Resource Group of choice as a managed disk.
 
 ### Creating the VM
 
@@ -71,7 +75,7 @@ Here is my script: [Create TrueNAS VM from uploaded VHD.ps1](https://github.com/
 
 If you don't want to go through the process of creating your own VHD, you can use mine. The credentials are root / TrueNAS
 
-
+My TrueNAS SCALE Image: [TrueNAS00.vhd](https://truenas2609.file.core.windows.net/truenas/TrueNAS00.vhd?st=2020-12-23T06%3A32%3A36Z&se=2021-12-31T06%3A32%3A00Z&sp=rl&sv=2018-03-28&sr=f&sig=4JuuZkSu1rfNXmvUA6HTvhakso1j%2FCrVZ8RPHkOmUIM%3D)
 
 ```powershell
 # Create TrueNAS VM from uploaded VHD
@@ -137,16 +141,19 @@ From here you can you can add additional data or caching disk to create your sto
 
 ### Wrap up
 
-This project required me to sharpen my skills in PowerShell and Azure. I was certainly frustrated a number of times, but I was able to work through my issues.
+This project required me to sharpen my skills in PowerShell and Azure. I was certainly frustrated a number of times, but I was able to work through it. In the future, I'd like to add more to my script to add data disks and be able to copy the VHD directly from my storage account into my resource group, but as it stands I achieved my goal of being able to create a basic TrueNAS appliance in Azure.  
 
-Skilled user/learned:
+Skilled used/learned:
 
-- [x] Creating a virtual machine using PowerShell
-- [x] Creating virtual machines in Hyper-V
-- [x] Converting and uploading Hyper-V virtual disks to Azure using [Microsoft Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/)
-- [x] Unix/Linux commands
-- [x] Creating virtual machines in Azure with PowerShell
-- [x] Using Github and Visual Studio Code
+- Creating a virtual machine using PowerShell
+- Creating virtual machines in Hyper-V
+- Converting and uploading Hyper-V virtual disks to Azure using [Microsoft Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/)
+- Unix/Linux commands
+- Creating virtual machines in Azure with PowerShell
+- Using Github and Visual Studio Code
 
+Links:
 
+- [TrueNAS.com](https://www.truenas.com/)
+- [Install FreeNAS in Hyper-V: Part 1 Basic Configuration (servethehome.com)](https://www.servethehome.com/install-freenas-hyperv-part-1-basic-configuration/)
 
